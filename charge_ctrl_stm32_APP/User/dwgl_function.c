@@ -2826,21 +2826,17 @@ void cmd_ShakeHands(void)
 		if(UART1_RXBUFFER[(UART1_RXBUFFE_HEAD+5)&UART1_RX_MAX] ==1)
 		{
 				temp = UART1_RXBUFFER[(UART1_RXBUFFE_HEAD+5)&UART1_RX_MAX];
-				UART_BUFFER[0] = 'C';
-				UART_BUFFER[1] = 0;
-				tft_DisplayStr(0, 0, UART_BUFFER,0XFFFF, 0X0000,3);
-				LCDC.LCD1SPTime = 0;
-				LCDC.LCD2SPTime = 0;
+				device.ChargeStatus = 'C';
+				device.ChargeStatusSW =1;
+				device.ChargeStatusTimer = time_sys;
 		}
 		else
 		if(UART1_RXBUFFER[(UART1_RXBUFFE_HEAD+5)&UART1_RX_MAX] ==2)
 		{
 				temp = UART1_RXBUFFER[(UART1_RXBUFFE_HEAD+5)&UART1_RX_MAX];
-				UART_BUFFER[0] = 'S';
-				UART_BUFFER[1] = 0;
-				tft_DisplayStr(0, 0, UART_BUFFER,0XFFFF, 0X0000,3);
-				LCDC.LCD1SPTime = 0;
-				LCDC.LCD2SPTime = 0;
+				device.ChargeStatus = 'S';
+				device.ChargeStatusSW =1;
+				device.ChargeStatusTimer = time_sys;
 		}
 		else
 		if(UART1_RXBUFFER[(UART1_RXBUFFE_HEAD+5)&UART1_RX_MAX] ==3)//APP MODE
@@ -4924,9 +4920,15 @@ void LCD_TEST(void)
 	{
 		if((LCDC.LCD1SPTime - time_rst_lcd1)>(LCDC.LCDSPTimeSet/3))   //屏保时间的3分之一初始一次
 		{
+// 			lcd1 = 0xFF;
+// 			LCD_Init1();
+// 			time_rst_lcd1 = LCDC.LCD1SPTime;
 			lcd1 = 0xFF;
-			LCD_Init1();
+			lcd2 = 0xFF;
+			LCDC.LCDError |= 0x01; 
+			LCD_InitAll();
 			time_rst_lcd1 = LCDC.LCD1SPTime;
+			time_rst_lcd2 = LCDC.LCD2SPTime;
 		}
 	}
 				
@@ -4985,8 +4987,14 @@ void LCD_TEST(void)
 	{
 		if((LCDC.LCD2SPTime - time_rst_lcd2)>(LCDC.LCDSPTimeSet/3))   //屏保时间的3分之一初始一次
 		{
-			lcd2 = 0xff;
-			LCD_Init2();		
+// 			lcd2 = 0xff;
+// 			LCD_Init2();		
+// 			time_rst_lcd2 = LCDC.LCD2SPTime;
+			lcd1 = 0xFF;
+			lcd2 = 0xFF;
+			LCDC.LCDError |= 0x01; 
+			LCD_InitAll();
+			time_rst_lcd1 = LCDC.LCD1SPTime;
 			time_rst_lcd2 = LCDC.LCD2SPTime;
 		}
 	}
@@ -5057,6 +5065,7 @@ void Version_display(u16 x,u8 *p)
 void State_Message(unsigned int x, unsigned int y, u16 UpColor, u16 DownColor,u16 ChargeColor)
 {
 	u8 j,i;
+	u8 StateASCII_size;
 		
 //		if((time_s-testcmd1_time)>=30)  //30秒没收到正确命令认为断开连接
 //			tft_Clear(u16 x,u16 y,u16 x_offset,u16 y_offset,u16 Color,u8 cs);
@@ -5070,7 +5079,7 @@ void State_Message(unsigned int x, unsigned int y, u16 UpColor, u16 DownColor,u1
 			tft_Clear(2,4,1,1,LGRAY,3);
 			tft_Clear(2,5,5,1,LGRAY,3);
 			tft_Clear(4,6,3,1,LGRAY,3);
-			tft_Clear(2,7,1,1,LGRAY,3);
+			tft_Clear(2,7,2,1,LGRAY,3);
 		}
 		else
 		{
@@ -5080,7 +5089,7 @@ void State_Message(unsigned int x, unsigned int y, u16 UpColor, u16 DownColor,u1
 			tft_Clear(2,4,1,1,GREEN,3);
 			tft_Clear(2,5,5,1,GREEN,3);
 			tft_Clear(4,6,3,1,GREEN,3);
-			tft_Clear(2,7,1,1,GREEN,3);
+			tft_Clear(2,7,2,1,GREEN,3);
 		}
 //上行	
 		if(UpColor!=NULL)
@@ -5113,7 +5122,7 @@ void State_Message(unsigned int x, unsigned int y, u16 UpColor, u16 DownColor,u1
 		tft_Clear(3,26,1,4,ChargeColor,1);
 		tft_Clear(4,23,1,4,ChargeColor,1);
 		tft_Clear(5,24,1,3,ChargeColor,1);
-		tft_Clear(6,25,1,2,ChargeColor,1);		
+		tft_Clear(6,25,1,2,ChargeColor,1);
 		tft_Clear(7,26,1,1,ChargeColor,1);	
 		
 	 if(ADC_BUFFER[23]>(ADC_Base0[7]+ADC_LINE2))
@@ -5132,8 +5141,21 @@ void State_Message(unsigned int x, unsigned int y, u16 UpColor, u16 DownColor,u1
 		tft_Clear(5,24,1,3,ChargeColor,2);
 		tft_Clear(6,25,1,2,ChargeColor,2);		
 		tft_Clear(7,26,1,1,ChargeColor,2);	
-//		
 		
+//charge 启动指示	
+		if(device.ChargeStatusSW==1)
+		{
+			device.ChargeStatusSW = 0;
+			if(time_sys-device.ChargeStatusTimer <600000)  //标志显示10分钟
+			{
+				device.ChargeStatusSW = 1;
+				UART_BUFFER[0] = device.ChargeStatus;
+				UART_BUFFER[1] = 0;
+				tft_DisplayStr(0, 230, UART_BUFFER,POINT_COLOR, BACK_COLOR,3);
+			}
+		}
+//		StateASCII_size	+= sizeof(UART_BUFFER);	
+		StateASCII_size =0;
 //网线连接		
 		if((time_s-testcmd3_time)>=5)  //0x16 0xe2都有确认连接功能
 		{
@@ -5147,7 +5169,7 @@ void State_Message(unsigned int x, unsigned int y, u16 UpColor, u16 DownColor,u1
 			UART_BUFFER[7] = 0;
 			if(info2STR.item3_data[1]==0x01)
 			{
-			tft_DisplayStr(0, 7*5, UART_BUFFER,POINT_COLOR, BACK_COLOR,3);
+			tft_DisplayStr(0, 7*5+8*StateASCII_size, UART_BUFFER,POINT_COLOR, BACK_COLOR,3);
 			}
 			GPIO_ResetBits(RJ45_IO1_PORT, RJ45_IO1_PIN);
 		}
@@ -5163,9 +5185,10 @@ void State_Message(unsigned int x, unsigned int y, u16 UpColor, u16 DownColor,u1
 			UART_BUFFER[7] = 0;
 			if(info2STR.item3_data[1]==0x01)
 			{
-			tft_DisplayStr(0, 7*5, UART_BUFFER,POINT_COLOR, BACK_COLOR,3);
+			tft_DisplayStr(0, 7*5+8*StateASCII_size, UART_BUFFER,POINT_COLOR, BACK_COLOR,3);
 			}
 		}
+		StateASCII_size	+= sizeof(UART_BUFFER);	
 //充电端口		
 		i=0;
 		UART_BUFFER[i++] ='1';  //代表1号屏
@@ -5177,7 +5200,7 @@ void State_Message(unsigned int x, unsigned int y, u16 UpColor, u16 DownColor,u1
 		UART_BUFFER[i++] =0;
 		if(info2STR.item3_data[0]==0x01)
 		{
-		tft_DisplayStr(0, 7*5+8*8, UART_BUFFER,POINT_COLOR, BACK_COLOR,1);
+		tft_DisplayStr(0, 7*5+8*StateASCII_size, UART_BUFFER,POINT_COLOR, BACK_COLOR,1);
 		}
 		
 		i=0;
@@ -5190,8 +5213,10 @@ void State_Message(unsigned int x, unsigned int y, u16 UpColor, u16 DownColor,u1
 		UART_BUFFER[i++] =0;
 	if(info2STR.item3_data[0]==0x01)
 		{
-		tft_DisplayStr(0, 7*5+8*8, UART_BUFFER,POINT_COLOR, BACK_COLOR,2);
+		tft_DisplayStr(0, 7*5+8*StateASCII_size, UART_BUFFER,POINT_COLOR, BACK_COLOR,2);
 		}
+		
+		StateASCII_size	+= sizeof(UART_BUFFER);	
 
 }
 			

@@ -59,7 +59,7 @@ int main(void)
 	device.Version[5] = '7'; //2017年 
 	device.Version[6] = '.'; //
 	device.Version[7] = '7'; //5月第2版    //Version[1]高四位是月份。低四位是当月产生的版本。
-	device.Version[8] = '1'; //5月第2版
+	device.Version[8] = '2'; //5月第2版
 	step =0;
 	time_s = 0;
 	time_sys = 0;
@@ -359,11 +359,7 @@ int main(void)
 			LCDC.LCD2PTime++;
 			LCDC.LCD1SPTime++;  //屏保时间
 			LCDC.LCD2SPTime++;  //屏保时间
-// 			if((LCDC.LCD1SPTime-LCDC.LCD2SPTime)<3)  //为了制造时差
-// 			{
-// 				LCDC.LCD1SPTime++;
-// 			}
-//			Dport_ChargeState();
+
 			if((checking_portB&0xF0)==0x40) 
 			{
 			ChargeCtrl_B();	//互拆上电
@@ -425,9 +421,7 @@ int main(void)
 			else
 			if(LCDC.LCD1POFFTime==5)  //断电后5秒调文字
 			{
-				LCDC.LCD1SPTime = 0;  //屏保时间
 				LCDC.LCD1SPPID = 0;
-				time_rst_lcd1 = LCDC.LCD1SPTime;
 				display_flash_BMPE (0,0,3,LCDC.LCD1SPPID,1);//单色彩色都支持 调背景
 				DisplayPROT_EWM(80,56,0,1);  //128
 				tft_DisplayStr(270, 125, device_num,0x0000,0xffff,1);
@@ -492,9 +486,7 @@ int main(void)
 			else
 			if(LCDC.LCD2POFFTime==5)  //断电后5秒调文字
 			{
-				LCDC.LCD2SPTime = 0;  //屏保时间
 				LCDC.LCD2SPPID = 0;
-				time_rst_lcd2 = LCDC.LCD2SPTime;
 				display_flash_BMPE (0,0,3,LCDC.LCD2SPPID,2);//单色彩色都支持 调背景
 				DisplayPROT_EWM(80,56,1,2);  //128
 				tft_DisplayStr(270, 125, device_num,0x0000,0xffff,2);
@@ -593,29 +585,29 @@ int main(void)
 		
 		if((LCDC.LCD2SPTime>=LCDC.LCDSPTimeSet)&&(time_sys-time_s_temp<300))//LCD2更新屏保
 		{
-				LCDC.LCD2SPTime -=LCDC.LCDSPTimeSet;
-			  if(LCDC.LCD2SPPID!=2)
+			LCDC.LCD2SPTime -=LCDC.LCDSPTimeSet;
+			if(LCDC.LCD2SPPID!=2)
+			{
+				if(LCDC.LCD2SPPID<1)
 				{
-					if(LCDC.LCD2SPPID<1)
-					{
-						LCDC.LCD2SPPID++;
-					}
-					else
-					{
-						LCDC.LCD2SPPID = 0;
-					}
-					display_flash_BMPE (0,0,3,LCDC.LCD2SPPID,2);//单色彩色都支持 调背景
-					if(LCDC.LCD2SPPID==1)
-					{
-					DisplayPROT_EWM(115,56,1,2);  //128
-					tft_DisplayStr(15, 125, device_num,0x0000,0xffff,2);
-					}
-					else
-					{
-					DisplayPROT_EWM(80,56,1,2);  //128
-					tft_DisplayStr(270, 125, device_num,0x0000,0xffff,2);
+					LCDC.LCD2SPPID++;
 				}
-			 }
+				else
+				{
+					LCDC.LCD2SPPID = 0;
+				}
+				display_flash_BMPE (0,0,3,LCDC.LCD2SPPID,2);//单色彩色都支持 调背景
+				if(LCDC.LCD2SPPID==1)
+				{
+				DisplayPROT_EWM(115,56,1,2);  //128
+				tft_DisplayStr(15, 125, device_num,0x0000,0xffff,2);
+				}
+				else
+				{
+				DisplayPROT_EWM(80,56,1,2);  //128
+				tft_DisplayStr(270, 125, device_num,0x0000,0xffff,2);
+				}
+			}
 		}
 
 		if((LCDC.LCD1PTime>=LCDC.LCDPTimeSet)&&(time_sys-time_s_temp<300))//LCD1更新广告

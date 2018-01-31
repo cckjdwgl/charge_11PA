@@ -100,6 +100,9 @@ struct  device_table {
 				u8		head;
 				u8		addr;
 				u16		Toolname;	  	        
+				u32		ChargeStatusTimer;	  	        
+				u8		ChargeStatus;	  	        
+				u8		ChargeStatusSW;	  	        
 // 	device.Version[0] = 'B'; //BL程序
 //	device.Version[1] = 0x11; //电路种类板子排序 =0X01，ctrl;=0x02,HUB.  //高四位表示第几代产品
 // 	device.Version[2] = 0X17; //2017年      //Version[0]写年份的最后两位0-99,4位表一位十进制
